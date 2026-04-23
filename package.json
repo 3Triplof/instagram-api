@@ -1,8 +1,12 @@
 {
   "name": "instagram-api",
   "version": "1.0.0",
+  "description": "Instagram Feed API",
   "main": "server.js",
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "start": "node server.js"
   },
