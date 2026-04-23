@@ -95,4 +95,36 @@ app.get("/api/instagram", async (req, res) => {
 
 app.listen(PORT, () => {
   console.log("Servidor rodando na porta", PORT);
+});      image:
+        post.display_url ||
+        post.image_versions?.[0]?.url ||
+        "",
+
+      content_text:
+        post.caption?.text ||
+        post.caption ||
+        "",
+
+      date_published: post.taken_at
+        ? new Date(post.taken_at * 1000).toISOString()
+        : new Date().toISOString(),
+    }));
+
+    const finalData = { items: result };
+
+    // 💾 salvar cache
+    cache[cacheKey] = {
+      time: Date.now(),
+      data: finalData,
+    };
+
+    res.json(finalData);
+
+  } catch (err) {
+    res.json({ items: [] });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log("Servidor rodando na porta", PORT);
 });
