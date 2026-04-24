@@ -6,7 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.RAPIDAPI_KEY;
 
-// 🔥 cache em memória (rápido e grátis)
+// 🔥 cache em memória
 const cache = {};
 const CACHE_TIME = 10 * 60 * 1000;
 
@@ -27,7 +27,7 @@ app.get("/api/instagram", async (req, res) => {
   try {
     let posts = [];
 
-    // 🥇 API 1 - Stable
+    // 🥇 API 1
     let response = await fetch(
       `https://instagram-scraper-stable-api.p.rapidapi.com/api/scrape?username=${user}`,
       {
@@ -41,7 +41,7 @@ app.get("/api/instagram", async (req, res) => {
     let data = await response.json();
     posts = data.items || data.data || [];
 
-    // 🥈 fallback API 2
+    // 🥈 fallback
     if (!posts.length) {
       response = await fetch(
         `https://instagram-scraper-api2.p.rapidapi.com/v1/posts?username=${user}`,
@@ -80,39 +80,7 @@ app.get("/api/instagram", async (req, res) => {
 
     const finalData = { items: result };
 
-    // 💾 salvar cache
-    cache[cacheKey] = {
-      time: Date.now(),
-      data: finalData,
-    };
-
-    res.json(finalData);
-
-  } catch (err) {
-    res.json({ items: [] });
-  }
-});
-
-app.listen(PORT, () => {
-  console.log("Servidor rodando na porta", PORT);
-});      image:
-        post.display_url ||
-        post.image_versions?.[0]?.url ||
-        "",
-
-      content_text:
-        post.caption?.text ||
-        post.caption ||
-        "",
-
-      date_published: post.taken_at
-        ? new Date(post.taken_at * 1000).toISOString()
-        : new Date().toISOString(),
-    }));
-
-    const finalData = { items: result };
-
-    // 💾 salvar cache
+    // 💾 cache
     cache[cacheKey] = {
       time: Date.now(),
       data: finalData,
