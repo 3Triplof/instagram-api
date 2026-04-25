@@ -5,10 +5,6 @@ const PORT = process.env.PORT || 3000;
 
 const APIFY_TOKEN = process.env.APIFY_TOKEN;
 
-// cache em memória
-const cache = {};
-const CACHE_TIME = 10 * 60 * 1000;
-
 app.get("/api/instagram", async (req, res) => {
   const user = req.query.user;
 
@@ -16,17 +12,10 @@ app.get("/api/instagram", async (req, res) => {
     return res.json({ items: [] });
   }
 
-  const cacheKey = `insta_${user}`;
-
-  // cache
-  if (cache[cacheKey] && Date.now() - cache[cacheKey].time < CACHE_TIME) {
-    return res.json(cache[cacheKey].data);
-  }
-
   try {
-    // 🚀 inicia scraping
-    const start = await fetch(
-      `https://api.apify.com/v2/acts/apify~instagram-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
+    // 🥇 1. roda o actor
+    const run = await fetch(
+      `https://api.apify.com/v2/acts/apify~instagram-scraper/runs?token=${APIFY_TOKEN}`,
       {
         method: "POST",
         headers: {
@@ -34,53 +23,36 @@ app.get("/api/instagram", async (req, res) => {
         },
         body: JSON.stringify({
           usernames: [user],
-          resultsLimit: 10
+          resultsLimit: 5
         })
       }
     );
 
-    const data = await start.json();
+    const runData = await run.json();
+    const datasetId = runData.data.defaultDatasetId;
 
-    if (!Array.isArray(data) || data.length === 0) {
+    // 🥈 2. pega os itens do dataset
+    const dataset = await fetch(
+      `https://api.apify.com/v2/datasets/${datasetId}/items?token=${APIFY_TOKEN}`
+    );
+
+    const posts = await dataset.json();
+
+    if (!posts.length) {
       return res.json({ items: [] });
     }
 
-    // normalizar
-    const result = data.map(post => ({
-  link:
-    post.url ||
-    post.link ||
-    (post.shortCode ? `https://www.instagram.com/p/${post.shortCode}` : "#"),
+    // 🧹 normalizar
+    const result = posts.map(post => ({
+      link: post.url || "#",
+      image: post.displayUrl || "",
+      content_text: post.caption || "",
+      date_published: post.timestamp
+        ? new Date(post.timestamp).toISOString()
+        : new Date().toISOString()
+    }));
 
-  image:
-    post.displayUrl ||
-    post.image ||
-    post.thumbnailUrl ||
-    "",
-
-  content_text:
-    post.caption ||
-    post.text ||
-    post.alt ||
-    "",
-
-  date_published:
-    post.timestamp
-      ? new Date(post.timestamp).toISOString()
-      : post.takenAt
-      ? new Date(post.takenAt).toISOString()
-      : new Date().toISOString()
-}));
-
-    const finalData = { items: result };
-
-    // salvar cache
-    cache[cacheKey] = {
-      time: Date.now(),
-      data: finalData
-    };
-
-    res.json(finalData);
+    res.json({ items: result });
 
   } catch (err) {
     res.json({ items: [] });
