@@ -47,13 +47,30 @@ app.get("/api/instagram", async (req, res) => {
 
     // normalizar
     const result = data.map(post => ({
-      link: post.url || "#",
-      image: post.displayUrl || "",
-      content_text: post.caption || "",
-      date_published: post.timestamp
-        ? new Date(post.timestamp).toISOString()
-        : new Date().toISOString()
-    }));
+  link:
+    post.url ||
+    post.link ||
+    (post.shortCode ? `https://www.instagram.com/p/${post.shortCode}` : "#"),
+
+  image:
+    post.displayUrl ||
+    post.image ||
+    post.thumbnailUrl ||
+    "",
+
+  content_text:
+    post.caption ||
+    post.text ||
+    post.alt ||
+    "",
+
+  date_published:
+    post.timestamp
+      ? new Date(post.timestamp).toISOString()
+      : post.takenAt
+      ? new Date(post.takenAt).toISOString()
+      : new Date().toISOString()
+}));
 
     const finalData = { items: result };
 
